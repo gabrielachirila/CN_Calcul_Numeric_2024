@@ -1,11 +1,16 @@
 import numpy as np
 
-epsilon = 0.000005
-n = 3
-A = np.array([[2.5, 2, 2], [5, 6, 5], [5, 6, 6.5]])
-b = [2, 2, 2]
+epsilon = 0.000001
+n = 6
+A = np.array([[2.5, 2, 2, 1], [5, 6, 5,1], [5, 6, 6.5,1], [1,1,1,1]])
+b = [2, 2, 2, 2]
 
+def generate_random_matrix_from_vectors(n):
+    matrix = np.random.rand(n, n)
+    return matrix
 
+A = generate_random_matrix_from_vectors(n)
+b = np.random.rand(n)
 def check_zero(number):
     if abs(number) < epsilon:
         raise Exception("Determinant is zero")
@@ -28,7 +33,7 @@ def LU_find(A):
 
 
 def LU_find2(A):
-    LU = np.zeros((n, n))
+    LU = A.copy()
 
     for p in range(n):
         for i in range(p, n):
@@ -38,7 +43,7 @@ def LU_find2(A):
                     diff = LU[i, k] * 1
                 else:
                     diff += LU[i, k] * LU[k, p]
-            LU[i, p] = A[i, p] - diff
+            LU[i, p] = LU[i, p] - diff
             if i == p:
                 check_zero(LU[i, p])
         for i in range(p + 1, n):
@@ -48,8 +53,11 @@ def LU_find2(A):
                     diff = LU[p, k] * 1
                 else:
                     diff += LU[p, k] * LU[k, i]
-            LU[p, i] = (A[p, i] - diff) / LU[p, p]
+                    print("l", p,k)
+                    print("u", k,i)
 
+            LU[p, i] = (LU[p, i] - diff) / LU[p, p]
+            print("Lu", p, i)
     return LU
 
 
@@ -127,7 +135,6 @@ x_lib = np.linalg.solve(A, b)
 print("\nSoluția sistemului Ax = b calculata folosind biblioteca este:")
 print(x_lib)
 
-# inversa
 A_inv = np.linalg.inv(A)
 print("\nInversa matricei A calculate folosind biblioteca este:")
 print(A_inv)
@@ -172,10 +179,9 @@ else:
 
 #       ------------------------------------BONUS--------------------------------------
 
-def LU_find_bonus(matrixA):
-    n = len(matrixA)
-    matrix = np.copy(matrixA)
 
+def LU_find_bonus(matrixA):
+    matrix = np.copy(matrixA)
     L_elements = np.zeros(n * (n + 1) // 2)
     U_elements = np.zeros(n * (n + 1) // 2)
 
@@ -183,29 +189,39 @@ def LU_find_bonus(matrixA):
     index_U = 0
 
     for p in range(n):
+        print("---------------", p)
         for i in range(p, n):
             if p == 0:
                 L_elements[index_L] = matrix[i, p]
                 index_L += 1
             else:
                 dif = 0
-                nr_elemente_lipsa = 0
+                nr_elemente = 0
                 for k in range(p):
-                    nr_elemente_lipsa += k
-                    dif += L_elements[p + (k * n) - nr_elemente_lipsa] * U_elements[p + (k * n) - nr_elemente_lipsa]
+                    nr_elemente += k
+                    dif += L_elements[i + (k * n) - nr_elemente] * U_elements[p + (k * n) - sum(range(1, k+1))]
+                    print("L :", i + (k * n) - nr_elemente)
+                    print("U: ", p + (k * n) - sum(range(1, k+1)))
                 L_elements[index_L] = matrix[i, p] - dif
+                print(index_L)
                 index_L += 1
 
         U_elements[index_U] = 1
         index_U += 1
+        nr_elemente_lipsa = 0
         for i in range(p + 1, n):
             dif = 0
-            nr_elemente_lipsa = 0
+            nr_elemente_lipsa_l = 0
             for k in range(p):
-                nr_elemente_lipsa += k
-                dif += L_elements[i + (k * n) - nr_elemente_lipsa] * U_elements[p + (k * n) - nr_elemente_lipsa]
-            U_elements[index_U] = (matrix[p, i] - dif) / L_elements[p + (p * n) - p]
+                nr_elemente_lipsa_l += k
+                dif += L_elements[p + (k * n) - nr_elemente_lipsa_l] * U_elements[i + (k * n) - nr_elemente_lipsa_l]
+
+            U_elements[index_U] = (matrix[p, i] - dif) / L_elements[p + (p * n) - sum(range(1, p + 1))]
+            print("here",p + (p * n) - sum(range(1, p + 1)))
+            print(index_U, "inds")
             index_U += 1
+        nr_elemente_lipsa += p
+        print(L_elements, U_elements)
 
     return L_elements, U_elements
 
@@ -231,16 +247,13 @@ def reconstruct_LU(L_elements, U_elements, n):
     return L, U
 
 
-A = np.array([[2.5, 2, 2], [5, 6, 5], [5, 6, 6.5]])
-
 L_elements, U_elements = LU_find_bonus(A)
 print("\nL", L_elements)
 print("U", U_elements)
 L, U = reconstruct_LU(L_elements,U_elements, len(A))
+print(LU)
 print("Matricea L\n", L)
 print("Marticea U\n", U)
-b = np.array([2, 2, 2])
-
 
 def calculate_y(L_vector, b):
     y = np.zeros(n)
